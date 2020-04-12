@@ -59,11 +59,37 @@ class Parser
   end
 
   def parse_expr
-    parse_integer
+    if peek(:integer)
+      parse_integer
+    elsif peek(:identifier) && peek(:oparen, 1)
+      parse_call
+    else
+      parse_var_ref
+    end
   end
 
   def parse_integer
     IntegerNode.new(consume(:integer).value.to_i)
+  end
+
+  def parse_call
+    name = consume(:identifier).value
+    arg_exprs = parse_arg_exprs
+    CallNode.new(name, arg_exprs)
+  end
+
+  def parse_arg_exprs
+    arg_exprs = []
+    consume(:oparen)
+    if !peek(:cparen)
+      arg_exprs << parse_expr
+      while peek(:comma)
+        consume(:comma)
+        arg_exprs << parse_expr
+      end
+    end
+    consume(:cparen)
+    arg_exprs
   end
 
   def parse_arg_names
@@ -80,6 +106,10 @@ class Parser
     arg_names
   end
 
+  def parse_var_ref
+    VarRefNode.new(consume(:identifier).value)
+  end
+
   def consume(expected_type)
     token = @tokens.shift
     if token.type == expected_type
@@ -89,8 +119,8 @@ class Parser
     end
   end
 
-  def peek(expected_type)
-    @tokens.fetch(0).type == expected_type
+  def peek(expected_type, offset=0)
+    @tokens.fetch(offset).type == expected_type
   end
 
 end
@@ -98,6 +128,10 @@ end
 
 DefNode = Struct.new(:name, :arg_names, :body)
 IntegerNode = Struct.new(:value)
+CallNode = Struct.new(:name, :arg_exprs)
+VarRefNode = Struct.new(:value)
+
+
 
 tokens = Tokenizer.new(File.read("test.src")).tokenize
 puts tokens.map(&:inspect).join("\n")
