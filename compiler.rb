@@ -8,6 +8,7 @@ class Tokenizer
     [:integer, /\b[0-9]+\b/],
     [:oparen, /\(/],
     [:cparen, /\)/],
+    [:comma, /,/],
   ]
 
   def initialize(code)
@@ -66,9 +67,17 @@ class Parser
   end
 
   def parse_arg_names
+    arg_names = []
     consume(:oparen)
+    if peek(:identifier)
+      arg_names << consume(:identifier).value
+      while peek(:comma)
+        consume(:comma)
+        arg_names << consume(:identifier).value
+      end
+    end
     consume(:cparen)
-    []
+    arg_names
   end
 
   def consume(expected_type)
@@ -79,6 +88,11 @@ class Parser
       rails RuntimeError.new("Expected token type #{expected_type.inspect} but got #{token.type.inspect}")
     end
   end
+
+  def peek(expected_type)
+    @tokens.fetch(0).type == expected_type
+  end
+
 end
 
 
