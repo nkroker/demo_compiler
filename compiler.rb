@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+
+# step1: Generating Token
 class Tokenizer
   TOKEN_TYPES = [
     [:def, /\bdef\b/],
@@ -39,6 +41,8 @@ end
 
 Token = Struct.new(:type, :value)
 
+
+# step2: Parsing up the tokens
 class Parser
   def initialize(tokens)
     @tokens = tokens
@@ -115,7 +119,7 @@ class Parser
     if token.type == expected_type
       token
     else
-      rails RuntimeError.new("Expected token type #{expected_type.inspect} but got #{token.type.inspect}")
+      raise RuntimeError.new("Expected token type #{expected_type.inspect} but got #{token.type.inspect}")
     end
   end
 
@@ -131,9 +135,34 @@ IntegerNode = Struct.new(:value)
 CallNode = Struct.new(:name, :arg_exprs)
 VarRefNode = Struct.new(:value)
 
-
+# step3: generating target code from tree
+class Generator
+  def generate(node)
+    case node
+    when DefNode
+      "function %s(%s) { return %s };" % [
+        node.name,
+        node.arg_names.join(","),
+        generate(node.body),
+      ]
+    when CallNode
+      "%s(%s)" % [
+        node.name,
+        node.arg_exprs.map { |expr| generate(expr) }.join(","),
+      ]
+    when VarRefNode
+      node.value
+    when IntegerNode
+      node.value
+    else
+      raise RuntimeError.new("Unexpected node type: #{node.class}")
+    end
+  end
+end
 
 tokens = Tokenizer.new(File.read("test.src")).tokenize
-puts tokens.map(&:inspect).join("\n")
 tree = Parser.new(tokens).parse
-puts tree
+generated = Generator.new.generate(tree)
+RUNTIME = "function add(x, y) { return(x + y) };"
+TEST = "console.log(f(1,2));"
+puts  [RUNTIME, generated, TEST].join("\n")
