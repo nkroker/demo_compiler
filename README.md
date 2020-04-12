@@ -31,9 +31,14 @@ end
 ## How to run then 🤔
 
 > Make sure you have ruby installed on your system ✌️
+
 > `git clone https://github.com/nkroker/demo_compiler.git`
+
 > `cd demo_compiler`
+
 > `chmod +x compiler.rb`
+
 > `ruby compiler.rb` or `./compiler.rb`
+
 
 The main motive behind writing this compiler is just for learning purpose so that you can play along with it 😊
